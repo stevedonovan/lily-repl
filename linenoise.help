@@ -1,0 +1,21 @@
+package linenoise
+
+A Lily binding to the linenoise command-history library.
+
+define linenoise(prompt: String): String
+
+Get an input line, showing the given prompt
+
+define history_add(line: String)
+
+Add a line to command-history
+
+define history_load(file: String)
+
+Reload command history from a file
+
+define history_save(file: String)
+
+Save current history to a file
+
+
