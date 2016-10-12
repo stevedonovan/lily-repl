@@ -2,7 +2,7 @@ package linenoise
 
 A Lily binding to the linenoise command-history library.
 
-define linenoise(prompt: String): String
+define linenoise(prompt: String): : Either[String,String]
 
 Get an input line, showing the given prompt
 
@@ -17,5 +17,11 @@ Reload command history from a file
 define history_save(file: String)
 
 Save current history to a file
+
+define history_set_maxlen(n: Integer)
+
+Set the maximum size of the history buffer
+(which will be saved)
+
 
 
