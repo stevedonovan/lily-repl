@@ -1,58 +1,56 @@
 import spawni
-import linenoise
-import sys
 
 var interp = spawni.Interpreter()
 var pending_line = ""
-var prompt1 = ">>> "
-var prompt2 = "... "
 
-var home = sys.getenv("HOME").unwrap() 
-var history_file = $"^(home)/.lilyrc"
-linenoise.history_set_maxlen(30)
-print(linenoise.history_load (history_file))
-
-while true: {
-    var prompt = prompt1
-    if pending_line: prompt = prompt2
-    var maybe_line = linenoise.linenoise(prompt)
-    if maybe_line.is_left(): {
-        stderr.print(maybe_line.left().unwrap())
-        break
-    }
-    var line = maybe_line.right().unwrap()
-    if line: {
-        linenoise.history_add(line)
-        linenoise.history_save (history_file)
-    }
-
+define write_prompt
+{
     if pending_line:
-        line = $"^(pending_line) ^(line)"
-    elif line == "exit":
-        break
-
-    var message = ""
-    var expr_result = interp.parse_expr("[repl]", line)
-
-    if expr_result.is_some(): {
-        # Print the result of a single simple expression.
-        stdout.print(expr_result.unwrap())
+        stdout.write("... ")
     else:
-        # Maybe it's a statement block...
-        var is_statement = interp.parse_string("[repl]", line)
-        if is_statement == false: {
-            message = interp.error_message()
-
-            if message.ends_with("'end of file'."): {
-                # Assume it's incomplete and keep building it up.
-                pending_line = line
-            else:
-                pending_line = ""
-
-                stdout.print(message)
-            }
-        }
-    }
-
+        stdout.write(">>> ")
 }
 
+class StopIteration < Exception("") {}
+
+define stop { raise StopIteration() }
+
+try: {
+    write_prompt()
+
+    stdin.each_line{|raw|
+        var line = raw.encode().unwrap().trim()
+
+        if pending_line:
+            line = $"^(pending_line) ^(line)"
+        elif line == "exit":
+            stop()
+
+        var message = ""
+        var expr_result = interp.parse_expr("[repl]", line)
+
+        if expr_result.is_some(): {
+            # Print the result of a single simple expression.
+            stdout.print(expr_result.unwrap())
+        else:
+            # Maybe it's a statement block...
+            var is_statement = interp.parse_string("[repl]", line)
+            if is_statement == false: {
+                message = interp.error_message()
+
+                if message.ends_with("'end of file'."): {
+                    # Assume it's incomplete and keep building it up.
+                    pending_line = line
+                else:
+                    pending_line = ""
+
+                    stdout.print(message)
+                }
+            }
+        }
+
+        write_prompt()
+    }
+except StopIteration:
+
+}
